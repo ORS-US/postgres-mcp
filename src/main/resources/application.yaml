@@ -1,0 +1,18 @@
+server:
+  port: 8033
+
+spring:
+  application:
+    name: postgres-mcp
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mydb
+    username: myuser
+    password: password
+    driver-class-name: org.postgresql.Driver
+  ai:
+    mcp:
+      server:
+        name: postgres-mcp
+        version: 1.0.0
+        type: SYNC
+        protocol: STREAMABLE
