@@ -1,0 +1,27 @@
+{{- range $name, $svc := .Values.services }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    app: {{ $name }}
+  annotations:
+    {{- if eq $svc.type "LoadBalancer" }}
+    # Configurazione specifica per OCI
+    oci.oraclecloud.com/load-balancer-type: "lb"
+    service.beta.kubernetes.io/oci-load-balancer-shape: "flexible"
+    oci.oraclecloud.com/security-rule-management-mode: None
+    service.beta.kubernetes.io/oci-load-balancer-shape-flex-min: "10"
+    service.beta.kubernetes.io/oci-load-balancer-shape-flex-max: "10"
+    oci.oraclecloud.com/oci-network-security-groups: "ocid1.networksecuritygroup.oc1.iad.aaaaaaaafpkpq56cegbyvm4pv5p4dgyqoauqzbck3drux5crwtjar4wuli4q"
+    {{- end }}
+spec:
+  type: {{ $svc.type | default "ClusterIP" }}
+  selector:
+    app: {{ $name }}
+  ports:
+    - protocol: TCP
+      port: {{ $svc.port }}
+      targetPort: {{ $svc.port }}
+{{- end }}

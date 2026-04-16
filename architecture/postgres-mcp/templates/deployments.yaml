@@ -1,0 +1,41 @@
+{{- range $name, $svc := .Values.services }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    app: {{ $name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+        timestamp: "{{ now | unixEpoch }}"
+    spec:
+      imagePullSecrets:
+        - name: registry-us-credentials
+      nodeSelector:
+        name: "action-analytics-pool"
+      containers:
+        - name: {{ $name }}
+          image: {{ $svc.image }}
+          ports:
+            - containerPort: {{ $svc.port }}
+          envFrom:
+            - configMapRef:
+                name: {{ $.Release.Name }}-config
+            - secretRef:
+                name: action-analytics-secrets
+          env:
+            {{- if $svc.env }}
+            {{- range $key, $val := $svc.env }}
+            - name: {{ $key }}
+              value: {{ tpl (print $val) $ | quote }}
+            {{- end }}
+            {{- end }}
+{{- end }}

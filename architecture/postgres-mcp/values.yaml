@@ -1,0 +1,27 @@
+global:
+
+  namespace: "action-analytics-dev"
+  
+  config:
+    LLM_PROVIDER: "oci"
+    GROQ_BASE_URL: "https://api.groq.com/openai"
+    GROQ_MODEL: "openai/gpt-oss-120b"
+    OCI_MODEL: "openai.gpt-oss-120b"
+    OCI_BASE_URL: "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions"
+    OCI_API_KEY: "sk-ETeEhvrU9xvviSFlfKLIy7OijZwy4a0frEvlI9LOxdWpBKVY"
+    ANTHROPIC_MODEL: "claude-sonnet-4-6"
+    GOOGLE_MODEL: "gemini-2.0-flash"
+    SPRING_DATASOURCE_URL: "jdbc:postgresql://10.0.10.129:5432/action_analytics"
+    SPRING_DATASOURCE_USERNAME: "ADMIN"
+
+services:
+  postgres-mcp:
+    image: iad.ocir.io/idpjbdyu47dd/action-analytics/postgres-mcp:latest
+    port: 8033
+    type: ClusterIP
+    env:
+      POSTGRES_PASSWORD: "3HW!UGs3MPCEr#"
+      POSTGRES_HOST: "10.0.10.129"
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: "action_analytics"
+      POSTGRES_USER: "ADMIN"
