@@ -16,23 +16,34 @@ public class postgresService {
     public postgresService(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
-
-    @McpTool(name = "list_tables", description = "List all tables in the public schema with their descriptions")
+    @McpTool(name = "list_schemas", description = "List all available schemas in the database")
+    public List<Map<String, Object>> listSchemas() {
+        String sql = """
+            SELECT schema_name
+            FROM information_schema.schemata
+            WHERE schema_name NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
+            ORDER BY schema_name
+            """;
+        return jdbcTemplate.queryForList(sql);
+    }
+    @McpTool(name = "list_tables", description = "List all tables across all schemas with their descriptions")
     public List<Map<String, Object>> listTables() {
         String sql = """
-                SELECT
-                    t.table_name,
-                    pgd.description AS table_description
-                FROM information_schema.tables t
-                LEFT JOIN pg_catalog.pg_statio_all_tables st
-                    ON st.schemaname = t.table_schema
-                    AND st.relname = t.table_name
-                LEFT JOIN pg_catalog.pg_description pgd
-                    ON pgd.objoid = st.relid
-                    AND pgd.objsubid = 0
-                WHERE t.table_schema = 'public'
-                ORDER BY t.table_name
-                """;
+            SELECT
+                t.table_schema,
+                t.table_name,
+                pgd.description AS table_description
+            FROM information_schema.tables t
+            LEFT JOIN pg_catalog.pg_statio_all_tables st
+                ON st.schemaname = t.table_schema
+                AND st.relname = t.table_name
+            LEFT JOIN pg_catalog.pg_description pgd
+                ON pgd.objoid = st.relid
+                AND pgd.objsubid = 0
+            WHERE t.table_schema NOT IN ('pg_catalog', 'information_schema')
+              AND t.table_type = 'BASE TABLE'
+            ORDER BY t.table_schema, t.table_name
+            """;
         return jdbcTemplate.queryForList(sql);
     }
 
@@ -47,26 +58,27 @@ public class postgresService {
 
     @McpTool(name = "describe_table", description = "Get the columns and description of a table")
     public List<Map<String, Object>> describeTable(
+            @McpToolParam(description = "The schema name (staging, result_algo, input_algo, input_data, public)") String schemaName,
             @McpToolParam(description = "The name of the table to describe") String tableName) {
         String sql = """
-                SELECT
-                    c.column_name,
-                    c.data_type,
-                    c.character_maximum_length,
-                    c.is_nullable,
-                    c.column_default,
-                    pgd.description AS column_description
-                FROM information_schema.columns c
-                LEFT JOIN pg_catalog.pg_statio_all_tables st
-                    ON st.schemaname = c.table_schema
-                    AND st.relname = c.table_name
-                LEFT JOIN pg_catalog.pg_description pgd
-                    ON pgd.objoid = st.relid
-                    AND pgd.objsubid = c.ordinal_position
-                WHERE c.table_schema = 'public'
-                  AND c.table_name = ?
-                ORDER BY c.ordinal_position
-                """;
-        return jdbcTemplate.queryForList(sql, tableName);
+            SELECT
+                c.column_name,
+                c.data_type,
+                c.character_maximum_length,
+                c.is_nullable,
+                c.column_default,
+                pgd.description AS column_description
+            FROM information_schema.columns c
+            LEFT JOIN pg_catalog.pg_statio_all_tables st
+                ON st.schemaname = c.table_schema
+                AND st.relname = c.table_name
+            LEFT JOIN pg_catalog.pg_description pgd
+                ON pgd.objoid = st.relid
+                AND pgd.objsubid = c.ordinal_position
+            WHERE c.table_schema = ?
+              AND c.table_name = ?
+            ORDER BY c.ordinal_position
+            """;
+        return jdbcTemplate.queryForList(sql, schemaName, tableName);
     }
 }

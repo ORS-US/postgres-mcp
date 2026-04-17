@@ -9,6 +9,14 @@ spring:
     username: myuser
     password: password
     driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 5000
+      initialization-fail-timeout: 10000  # fail fast on startup if DB unreachable
+      connection-test-query: SELECT 1      # validate connection is alive
+      keepalive-time: 60000
+      maximum-pool-size: 5
+      minimum-idle: 1
+      idle-timeout: 300000        # keeps connection alive through VPN
   ai:
     mcp:
       server:
